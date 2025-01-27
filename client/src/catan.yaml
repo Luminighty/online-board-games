@@ -1,0 +1,100 @@
+---
+meta:
+  title: Catan
+
+
+tiles:
+  - repeat: 4
+    src: "fields.png"
+    locked: true
+  - repeat: 4
+    src: "forest.png"
+    locked: true
+  - repeat: 4
+    src: "pasture.png"
+    locked: true
+  - repeat: 3
+    src: "mountain.png"
+    locked: true
+  - repeat: 3
+    src: "hills.png"
+    locked: true
+
+
+map: # !!Map
+  type: tilemap
+  kind: hexagon
+  from: tiles
+  pick_mode: random
+  overwrite:
+    0,0: {src: "desert.png", locked: true}
+
+
+resources:
+  - type: deck
+    items: # !!RepeatArray
+      - repeat: 19
+        src: "brick.png"
+  - type: deck
+    items: # !!RepeatArray
+      - repeat: 19
+        src: "ore.png"
+  - type: deck
+    items: # !!RepeatArray
+      - repeat: 19
+        src: "wool.png"
+  - type: deck
+    items: # !!RepeatArray
+      - repeat: 19
+        src: "grain.png"
+  - type: deck
+    items: # !!RepeatArray
+      - repeat: 19
+        src: "lumber.png"
+
+
+development_cards:
+  type: deck
+  shuffle: true
+  items: # !!RepeatArray
+    - repeat: 14
+      src: "dev_knight.png"
+    - repeat: 2
+      src: "dev_monopoly.png"
+    - repeat: 2
+      src: "dev_road_building.png"
+    - repeat: 2
+      src: "dev_year_of_plenty.png"
+    - src: "dev_chapel.png"
+    - src: "dev_library.png"
+    - src: "dev_market.png"
+    - src: "dev_palace.png"
+    - src: "dev_university.png"
+
+
+misc:
+  - type: d6
+  - type: d6
+  - src: "longest_road.png"
+  - src: "largest_army.png"
+  - src: "robber.png"
+
+
+TEMPLATE_PLAYER:
+  - repeat: 4
+    src: "%PLAYER%_city.png"
+  - repeat: 5
+    src: "%PLAYER%_settlement.png"
+  - repeat: 15
+    src: "%PLAYER%_road.png"
+  - src: "building_costs.png"
+
+players:
+  - TEMPLATE_PLAYER:
+      PLAYER: "red"
+  - TEMPLATE_PLAYER:
+      PLAYER: "green"
+  - TEMPLATE_PLAYER:
+      PLAYER: "blue"
+  - TEMPLATE_PLAYER:
+      PLAYER: "orange"

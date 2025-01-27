@@ -1,0 +1,14 @@
+body {
+	width: 100vw;
+	height: 100vh;
+	margin: 0px;
+	overflow: hidden;
+	background-color: black;
+}
+
+#transparency {
+	position: absolute;
+	transform: translate(50%, 50%);
+	top: 0;
+	left: 0;
+}

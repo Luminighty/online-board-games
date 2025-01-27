@@ -1,0 +1,4 @@
+resources
+.vscode
+client/assets
+package-lock.json
