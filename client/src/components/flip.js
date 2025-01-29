@@ -1,3 +1,5 @@
+import { assertComponent } from "./utils"
+
 /**
  * @typedef {Object} Flippable
  * @property {boolean} flipped
@@ -5,25 +7,31 @@
  * @property {string} front
  */
 
+
 /**
  * @param {Partial<Flippable>} options 
  * @returns {{ flip: Flippable }}
  */
-function create(options = {}) {
-	return {
-		flip: {
-			flipped: options.flipped ?? false,
-			back: options.back ?? "backside",
-			front: options.front ?? "frontside",
-		}
+function create(gameobject, options = {}) {
+	gameobject.flip = {
+		flipped: options.flipped ?? false,
+		back: options.back,
+		front: options.front,
 	}
+	if (gameobject.sprite)
+		gameobject.sprite.meta.handTexture = gameobject.flip.flipped ? gameobject.flip.front : gameobject.flip.back
+	return gameobject
 }
 
 /** @param {import("./typedefs").GameObject} object */
 function flip(object) {
-	console.assert(object.flip, `Attempted to flip a gameobject, but it is not flippable (ID=${object.id})`, {object})
+	assertComponent(object, "flip", "flip")
+	
 	object.flip.flipped = !object.flip.flipped
-	console.log(`Flipping`, object);
+	if (object.sprite) {
+		object.sprite.textures[0].texture = object.flip.flipped ? object.flip.back : object.flip.front
+		object.sprite.meta.handTexture = object.flip.flipped ? object.flip.front : object.flip.back
+	}
 }
 
 export const Flippable = {

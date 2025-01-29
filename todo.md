@@ -1,0 +1,48 @@
+
+Need:
+ - [ ] ContextMenu
+   - [X] Flip
+   - [X] Shuffle
+	 - [X] Lock
+	 - [X] Id
+	 - [X] Roll
+ - [X] Flippable
+   - [X] Front/Back
+ - [X] Stack
+   - [X] MultiSprite
+	 - [X] Sprite::visible
+   - [X] Item Stacking
+	 - [X] Stack Moving
+	 - [X] Draw
+	 - [X] Shuffle
+ - [X] Rollable
+   - [X] List textures
+ - [ ] Hand
+   - [ ] Draw to hand
+	 - [ ] Hitcheck hand
+	 - [ ] Remove from hand from Global zone
+	 - [ ] Remove from hand from Local zone
+	 - [X] Hand Local Zone Rendering
+	 - [X] Hand Global Zone
+	 - [X] Show backsides
+ - [ ] Networking
+   - [ ] Server hosted game
+	 - [ ] Sync objects with id
+	 - [ ] Sync events
+	 - [ ] Sync Grab (lock while grabbing)
+	 - [ ] Sync Flip
+	 - [ ] Sync Stack Shuffle
+	 - [ ] Sync Draw
+	 - [ ] Sync Hand
+	 - [ ] Sync Cursor
+
+
+Good to have
+ - [ ] ContextMenu
+   - [ ] Rotate
+	 - [ ] Global Rotate Amount
+ - [ ] Animations
+   - [ ] Move interpolation
+	 - [ ] Rotate interpolation
+	 - [ ] Flip
+	 - [ ] Shuffle

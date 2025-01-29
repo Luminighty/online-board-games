@@ -29,6 +29,21 @@ export const Transform = {
 		Transform.updateTransform(transform)
 		return transform
 	},
+	clone(from) {
+		const transform = {
+			x: from.x,
+			y: from.y,
+			pivot: { ...from.pivot },
+			scaleX: from.scaleX,
+			scaleY: from.scaleY,
+			angle: from.angle,
+			parent: from.parent,
+			transform: Matrix.identity(),
+			inverse: Matrix.identity(),
+		}
+		Transform.updateTransform(transform)
+		return transform
+	},
 	/** @param {TransformT} self  */
 	updateTransform(self) {
 		self.transform = Matrix.applyAll(

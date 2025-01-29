@@ -1,6 +1,7 @@
 import { Camera } from "../../camera"
 import { ContextMenuButton } from "./button"
 import { BASE_FONT, ID_LABEL_FONT, LABEL_FONT } from "./common"
+import { ContextMenuStyle } from "./styles"
 import { MENU_TYPE, MenuRenderer } from "./types"
 
 
@@ -45,6 +46,11 @@ export const ContextMenu = {
 		return this
 	},
 
+	keepOpen() {
+		this.items[this.items.length - 1].keepOpen = true
+		return this
+	},
+
 	idLabel(id) {
 		this.items.push({ 
 			type: MENU_TYPE.idLabel, 
@@ -66,6 +72,7 @@ export const ContextMenu = {
 	hide() {
 		this.visible = false
 		this.hovering = null
+		document.body.style.cursor = "default"
 	},
 }
 
@@ -87,7 +94,7 @@ export function renderContextMenu(context, cursorX, cursorY) {
 
 	let x = ContextMenu.x
 	let y = ContextMenu.y
-	context.fillStyle = "black"
+	context.fillStyle = ContextMenuStyle.bg
 	context.textBaseline = "top"
 	context.font = BASE_FONT
 	const lineHeight = ContextMenu.padding.y * 2 + 16
@@ -113,6 +120,6 @@ export function renderContextMenu(context, cursorX, cursorY) {
 }
 
 export function isContextMenuHovering() {
-	return Camera.screen.x >= ContextMenu.x && Camera.screen.x <= ContextMenu.x + ContextMenu.width && 
+	return ContextMenu.visible && Camera.screen.x >= ContextMenu.x && Camera.screen.x <= ContextMenu.x + ContextMenu.width && 
 		Camera.screen.y >= ContextMenu.y && Camera.screen.y <= ContextMenu.y + ContextMenu.height
 }

@@ -1,32 +1,56 @@
 import { getContext, setupCanvas } from "./render/canvas"
-import { Flippable } from "./components/flip"
-import { GameObject } from "./components/gameobject"
-import catan from "@res/default.yaml?raw"
-import YAML from "yaml"
-import { loadTexture } from "./render/texture"
-import { createSprite, renderSprites } from "./render/sprite"
+import { renderSprites } from "./render/sprite"
 import { mainViewport } from "./render/viewport"
 import { Camera, setupCamera } from "./camera"
 import { worldBounds } from "./bounds"
 import { drawBackground, setBackground } from "./render/background"
-import { ContextMenu, renderContextMenu } from "./render/contextmenu/index"
-import { SingleSprite } from "./components/singlesprite"
+import { renderContextMenu } from "./render/contextmenu/index"
 import { Catan } from "./catan"
-
+import { GameObject } from "./components/gameobject"
+import { FrenchCardDeck } from "./templates/base"
+import { loadTexture } from "./render/texture"
+import { Roll } from "./components/roll"
+import { GameSprite } from "./components/sprite"
+import { renderHandArea, renderHandContents, setupHand } from "./render/hand"
 
 setupCanvas("#app")
-const textZipChip = loadTexture("assets/default/chips/zipchip.png")
 const context = getContext()
+setTimeout(setup)
+Catan.load()
 
-setBackground("assets/background.png")
+//const catanData = YAML.parse(catan)
+//console.log(Object.keys(catanData))
+//console.log(catanData)
 
+function d6(x, y) {
+  const textures = [1, 2, 3, 4, 5, 6].map((v) => 
+    loadTexture(`assets/default/white/side_${v}.png`)
+  )
+  const dice = GameObject.create({x, y})
+  GameSprite.create(dice, textures[0], {
+    width: 50, height: 50
+  })
+  Roll.create(dice, { textures, value: 1 })
+  
+}
+
+function setup() {
+  setBackground("assets/background.png")
+  setupCamera()
+  setupHand()
+
+  FrenchCardDeck(200, 0)
+
+  d6(0, 0)
+
+  requestAnimationFrame(render)
+}
 
 
 function render() {
   context.fillStyle = "black"
   context.fillRect(0, 0, window.innerWidth, window.innerHeight)
   mainViewport.applyToContext(context)
-  //context.drawImage(background.image, 0, 0)
   drawBackground(context)
 
   context.lineWidth = 2
@@ -36,43 +60,12 @@ function render() {
     worldBounds.maxX - worldBounds.minX, worldBounds.maxY - worldBounds.minY
   )
   renderSprites()
+  renderHandArea()
 
   context.resetTransform()
+
+  renderHandContents()
   renderContextMenu(context, Camera.screen.x, Camera.screen.y)
 
   requestAnimationFrame(render)
 }
-
-function setup() {
-  setupCamera()
-  render()
-
-  ContextMenu.new()
-    .label("What the dog doin")
-    .button("Hello", () => console.log("clicked"))
-    .idLabel(123)
-    .show(100, 100)
-}
-Catan.load()
-
-const object = {
-  ...GameObject.create({x: 100, y: 100}),
-  ...Flippable.create(),
-}
-SingleSprite.create(object, textZipChip, {
-  width: 85, height: 85
-})
-const other = {
-  ...GameObject.create(),
-}
-
-console.log(object.flip)
-Flippable.flip(object)
-
-
-const catanData = YAML.parse(catan)
-console.log(Object.keys(catanData))
-console.log(catanData)
-
-
-setTimeout(setup)

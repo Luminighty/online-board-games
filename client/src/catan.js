@@ -1,6 +1,7 @@
 import { GameObject } from "./components/gameobject"
-import { SingleSprite } from "./components/singlesprite"
+import { GameSprite } from "./components/sprite"
 import { loadTexture } from "./render/texture"
+import { StaticPiece } from "./templates/common"
 
 const WIDTH = 250
 const HEIGHT = 289
@@ -17,13 +18,14 @@ function piece(kind, color, x, y) {
 	const [width, height] = {
 		"road": [21, 104],
 		"settl": [48, 50],
+		"costs": [320, 400],
 	}[kind]
 	const texture = loadTexture(`assets/settlers/pieces/${kind}_${color}.png`)
 	
 	const object = {
 		...GameObject.create({x, y}),
 	}
-	SingleSprite.create(object, texture, {
+	GameSprite.create(object, texture, {
 		width, height,
 	})
 }
@@ -33,44 +35,32 @@ function playerkit(color, x, y) {
 		piece("road", color, x + offset * 10, y)
 	for (let offset = 0; offset < 5; offset++)
 		piece("settl", color, x + offset * 10, y + 100)
-
+	piece("costs", color, x, y + 300)
 }
 
 function num_tile(value, _x, _y) {
 	const tile_size = 74
-	
-	const texture = loadTexture(`assets/settlers/num_tile/num_${value}.png`)
 	const {x, y} = tile_pos(_x, _y);
-	const object = {
-		...GameObject.create({x, y: y + tile_size / 2}),
-	}
-	SingleSprite.create(object, texture, {
+	StaticPiece({
+		src: `assets/settlers/num_tile/num_${value}.png`,
 		width: tile_size, height: tile_size,
-		hittable: false,
+		x, y: y + tile_size / 2
 	})
 }
 
 function sea(x, y, angle) {
-	const texture = loadTexture(`assets/settlers/tile_sea.png`)
-
-	const object = {
-		...GameObject.create({x, y}),
-	}
-	SingleSprite.create(object, texture, {
-		width: 1500 / 2, height: 423 / 2, angle: angle * Math.PI / 3,
-		hittable: false,
+	StaticPiece({
+		src: `assets/settlers/tiles/tile_sea.png`,
+		x, y, width: 1500 / 2, height: 423 / 2, 
+		angle: angle * Math.PI / 3,
 	})
 }
 
 function tile(type, x, y) {
-	const texture = loadTexture(`assets/settlers/tile_${type}.png`)
-
-	const object = {
-		...GameObject.create(tile_pos(x, y)),
-	}
-	SingleSprite.create(object, texture, {
+	StaticPiece({
+		src: `assets/settlers/tiles/tile_${type}.png`,
 		width: WIDTH, height: HEIGHT,
-		hittable: false,
+		...tile_pos(x, y),
 	})
 }
 
@@ -95,11 +85,11 @@ function load() {
 		8, 8, 9, 9, 10, 10, 11, 11, 12
 	]
 	const positions = [
-		[-2, -1], [0, -1], [2, -1],
-		[-3, 0], [-1, 0], [1, 0], [3, 0],
-		[-4, 0], [-2, 0], [2, 0], [4, 0],
-		[-3, 1], [-1, 1], [1, 1], [3, 1],
-		[-2, 1], [0, 1], [2, 1],
+		      [-2, -1], [0, -1], [2, -1],
+		   [-3, 0], [-1, 0], [1, 0], [3, 0],
+		[-4, 0], [-2, 0],        [2, 0], [4, 0],
+		   [-3, 1], [-1, 1], [1, 1], [3, 1],
+		       [-2, 1], [0, 1], [2, 1],
 	]
 	for (const [x, y] of positions) {
 		tile(pick(tiles), x, y)

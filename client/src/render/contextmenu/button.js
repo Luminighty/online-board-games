@@ -1,4 +1,5 @@
 import { BASE_FONT, LABEL_FONT, renderBaseBox } from "./common"
+import { ContextMenuStyle } from "./styles"
 import { MENU_TYPE, MenuRenderer } from "./types"
 
 /** 
@@ -13,6 +14,7 @@ export function ContextMenuButton(label, onClick) {
 		type: MENU_TYPE.Button,
 		label,
 		onClick,
+		keepOpen: false,
 		/** @param {CanvasRenderingContext2D} context */
 		width(context) {
 			context.font = BASE_FONT
@@ -36,14 +38,14 @@ ContextMenuButton.hovering = (render) =>
  */
 MenuRenderer[MENU_TYPE.Button] = (item, render) => {
 	const hovering = ContextMenuButton.hovering(render)
-	const fillStyle = hovering ? "lightgray" : "white"
+	const fillStyle = hovering ? ContextMenuStyle.bgHover : ContextMenuStyle.bg
 	if (hovering) {
 		render.cursor = "pointer"
 		render.hovering = item
 	}
 	renderBaseBox(render, {fillStyle})
 
-	render.context.fillStyle = "black"
+	render.context.fillStyle = "white"
 	render.context.font = BASE_FONT
 	render.context.fillText(item.label, render.x + render.padding.x, render.y + render.padding.y)
 
