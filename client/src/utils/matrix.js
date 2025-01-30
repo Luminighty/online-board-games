@@ -49,7 +49,11 @@ export const Matrix = {
 			res = Matrix.apply(res, other)
 		return res
 	},
-
+	/** 
+	 * @param {CanvasMatrix} self 
+	 * @param {number} x 
+	 * @param {number} y
+	 * @returns {{x: number, y: number}} */
 	applyVec(self, x, y) {
 		return {
 			x: self.a * x + self.c * y + self.e,

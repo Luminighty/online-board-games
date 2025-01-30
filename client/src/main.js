@@ -12,6 +12,8 @@ import { loadTexture } from "./render/texture"
 import { Roll } from "./components/roll"
 import { GameSprite } from "./components/sprite"
 import { renderHandArea, renderHandContents, setupHand } from "./render/hand"
+import { Animation } from "./render/animator"
+import { renderDebug } from "./render/debug"
 
 setupCanvas("#app")
 const context = getContext()
@@ -47,7 +49,12 @@ function setup() {
 }
 
 
-function render() {
+let lastTs = 0
+function render(ts) {
+  const dt = ts - lastTs
+  lastTs = ts
+  Animation.update(dt)
+
   context.fillStyle = "black"
   context.fillRect(0, 0, window.innerWidth, window.innerHeight)
   mainViewport.applyToContext(context)
@@ -66,6 +73,8 @@ function render() {
 
   renderHandContents()
   renderContextMenu(context, Camera.screen.x, Camera.screen.y)
+
+  renderDebug(dt)
 
   requestAnimationFrame(render)
 }

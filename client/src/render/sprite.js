@@ -28,9 +28,8 @@ let zIndexDirty = false
  * @typedef {Object} TextureData
  * @prop {number} width
  * @prop {number} height
- * @prop {number} x
- * @prop {number} y
  * @prop {import("./texture").Texture} texture
+ * @prop {import("../utils/transform").TransformT} transform
  */
 
 /**
@@ -44,8 +43,7 @@ export function createSprite(options = {}, ...textures) {
 			console.assert(texture.width != null, "Width was not defined for sprite texture!", texture)
 			console.assert(texture.height != null, "Height was not defined for sprite texture!", texture)
 			console.assert(texture.texture != null, "Texture was not defined for sprite texture!", texture)
-			texture.x = texture.x ?? 0
-			texture.y = texture.y ?? 0
+			texture.transform = Transform.new(texture)
 			return texture
 		}),
 		transform: options.transform ?? Transform.new({
@@ -103,13 +101,17 @@ export function renderSprites() {
 		context.save()
 		applySpriteTransform(context, sprite.transform)
 		for (let i = 0; i < sprite.textures.length; i++) {
+			context.save()
 			const textureData = sprite.textures[i]
-			if (textureData.texture.loaded)
+			applyMatrixToContext(context, textureData.transform.transform)
+			if (textureData.texture.loaded) {
 				context.drawImage(
 					textureData.texture.image, 
-					textureData.x, textureData.y, 
+					0, 0, 
 					textureData.width, textureData.height
 				)
+			}
+			context.restore()
 		}
 		context.restore()
 	}
@@ -122,13 +124,17 @@ export function renderSprites() {
 export function applySpriteTransform(context, transform) {
 	if (transform.parent)
 		applySpriteTransform(context, transform.parent)
+	applyMatrixToContext(context, transform.transform)
+}
+
+export function applyMatrixToContext(context, matrix) {
 	context.transform(
-		transform.transform.a,
-		transform.transform.b,
-		transform.transform.c,
-		transform.transform.d,
-		transform.transform.e,
-		transform.transform.f,
+		matrix.a,
+		matrix.b,
+		matrix.c,
+		matrix.d,
+		matrix.e,
+		matrix.f,
 	)
 }
 
@@ -137,14 +143,7 @@ export function applySpriteTransform(context, transform) {
  * @param {import("../utils/transform").TransformT} transform
  */
 export function applySpriteInverseTransform(context, transform) {
-	context.transform(
-		transform.inverse.a,
-		transform.inverse.b,
-		transform.inverse.c,
-		transform.inverse.d,
-		transform.inverse.e,
-		transform.inverse.f,
-	)
+	applyMatrixToContext(context, transform.inverse)
 	if (transform.parent)
 		applySpriteTransform(context, transform.parent)
 }
@@ -156,10 +155,12 @@ function getSpriteHitData(worldX, worldY, sprite) {
 	if (!sprite.hittable || !sprite.visible)
 		return null
 	
-	const local = Matrix.applyVec(Transform.globalInverse(sprite.transform), worldX, worldY)
+	const globalTransform = Transform.globalInverse(sprite.transform)
 	for (let j = 0; j < sprite.textures.length; j++) {
-		const offsetX = local.x + sprite.textures[j].x
-		const offsetY = local.y + sprite.textures[j].y
+		const local = Matrix.applyVec(Matrix.apply(globalTransform, sprite.textures[j].transform.inverse), worldX, worldY)
+
+		const offsetX = local.x
+		const offsetY = local.y
 		const width = sprite.textures[j].width
 		const height = sprite.textures[j].height
 

@@ -4,7 +4,7 @@ import { Roll } from "./components/roll"
 import { Stack } from "./components/stack"
 import { ContextMenu, isContextMenuHovering } from "./render/contextmenu"
 import { SpriteEffect } from "./render/effects"
-import { addToHand } from "./render/hand"
+import { addToHand, isInHand, removeFromHand } from "./render/hand"
 import { bringToFront, hitcheckSprites, hitcheckSpritesAll } from "./render/sprite"
 import { mainViewport } from "./render/viewport"
 import { Matrix } from "./utils/matrix"
@@ -127,6 +127,7 @@ export function onPointerMove(e) {
 	if (!Camera.drag)
 		return
 
+
 	Camera.movedForDrag = Camera.movedForDrag || 
 		Math.abs(Camera.clickStart.x - e.x) + Math.abs(Camera.clickStart.y - e.y) > 5;
 
@@ -143,6 +144,10 @@ export function onPointerMove(e) {
 			clearTimeout(Camera.stack.timeout)
 		}
 
+		const inHand = isInHand()
+		if (inHand != Camera.drag.gameobject.meta.isInHand) {
+			inHand ? addToHand(Camera.drag.gameobject) : removeFromHand(Camera.drag.gameobject)
+		}
 
 		Camera.drag.gameobject.transform.x = Camera.world.x + Camera.drag.offsetX
 		Camera.drag.gameobject.transform.y = Camera.world.y + Camera.drag.offsetY

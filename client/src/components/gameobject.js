@@ -14,7 +14,8 @@ function create(options = {}) {
 	const object = {
 		id: options.id ?? lastId++,
 		locked: options.locked ?? false,
-		transform: Transform.new(options)
+		transform: Transform.new(options),
+		meta: {},
 	}
 	gameObjects.push(object)
 	return object

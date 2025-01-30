@@ -1,4 +1,6 @@
+import { Animation } from "../render/animator"
 import { assertComponent } from "./utils"
+
 
 /**
  * @typedef {Object} Flippable
@@ -24,13 +26,24 @@ function create(gameobject, options = {}) {
 }
 
 /** @param {import("./typedefs").GameObject} object */
-function flip(object) {
+function flip(object, playAnimation=true) {
 	assertComponent(object, "flip", "flip")
-	
-	object.flip.flipped = !object.flip.flipped
-	if (object.sprite) {
-		object.sprite.textures[0].texture = object.flip.flipped ? object.flip.back : object.flip.front
-		object.sprite.meta.handTexture = object.flip.flipped ? object.flip.front : object.flip.back
+
+	function doAFlip() {
+		object.flip.flipped = !object.flip.flipped
+		if (object.sprite) {
+			object.sprite.textures[0].texture = object.flip.flipped ? object.flip.back : object.flip.front
+			object.sprite.meta.handTexture = object.flip.flipped ? object.flip.front : object.flip.back
+		}
+	}
+
+	if (playAnimation) {
+		Animation.create()
+			.transform(object.sprite.transform, "scaleX", [0, 1], [60, 0], [120, 1])
+			.callback(doAFlip, [60])
+			.play()
+	} else {
+		doAFlip()
 	}
 }
 

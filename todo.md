@@ -27,6 +27,7 @@ Need:
 	 - [X] Show backsides
  - [ ] Networking
    - [ ] Server hosted game
+	 - [ ] Allow single player (WITHOUT SERVER)
 	 - [ ] Sync objects with id
 	 - [ ] Sync events
 	 - [ ] Sync Grab (lock while grabbing)
@@ -44,5 +45,8 @@ Good to have
  - [ ] Animations
    - [ ] Move interpolation
 	 - [ ] Rotate interpolation
-	 - [ ] Flip
-	 - [ ] Shuffle
+	 - [X] Flip
+	 - [X] Shuffle
+	 - [X] Grab
+	 - [X] Context Open/Close
+	 - [ ] Dice (3d?)

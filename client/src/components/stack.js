@@ -3,6 +3,7 @@
  * @property {import("./typedefs").GameObject[]} objects
  */
 
+import { Animation } from "../render/animator"
 import { bringToFront, setZIndexDirty } from "../render/sprite"
 import { Matrix } from "../utils/matrix"
 import { createShuffleSeed, shuffleApply } from "../utils/random"
@@ -61,13 +62,22 @@ function updateStackTexture(gameobject) {
 	const length = Math.min(objects.length, VISIBLE_ELEMENTS)
 	gameobject.sprite.textures.length = length
 	for (let i = 0; i < length; i++) {
-		gameobject.sprite.textures[length - i] = {
-			texture: objects[objects.length - i - 1].sprite.textures[0].texture,
-			height: objects[objects.length - i - 1].sprite.textures[0].height,
-			width: objects[objects.length - i - 1].sprite.textures[0].width,
-			y: i * STACK_OFFSET,
-			x: 0
-		}
+		const obj = objects[objects.length - i - 1]
+		const textureData = obj.sprite.textures[0]
+		if (!gameobject.sprite.textures[length - i - 1])
+			gameobject.sprite.textures[length - i - 1] = { transform: Transform.new() }
+
+		const stackTexture = gameobject.sprite.textures[length - i - 1]
+
+		// We need to ensure that the texture transform stays the same for animations to work properly
+		stackTexture.texture = textureData.texture
+		stackTexture.height = textureData.height
+		stackTexture.width = textureData.width
+		stackTexture.transform.y = obj.sprite.textures[0].height / 2 + i * STACK_OFFSET
+		stackTexture.transform.x = obj.sprite.textures[0].width / 2
+		stackTexture.transform.pivot.x = obj.sprite.textures[0].width / 2
+		stackTexture.transform.pivot.y = obj.sprite.textures[0].height / 2
+		Transform.updateTransform(stackTexture.transform)
 	}
 }
 
@@ -132,22 +142,51 @@ function push(gameobject, other) {
 }
 
 /** @param {import("./typedefs").GameObject} gameobject */
-function shuffle(gameobject) {
+function shuffle(gameobject, playAnimation=true) {
 	assertComponent(gameobject, "stack", "shuffle")
 	const seed = createShuffleSeed(gameobject.stack.objects.length)
-	shuffleApply(gameobject.stack.objects, seed)
-	updateStackTexture(gameobject)
+
+	function doShuffle() {
+		shuffleApply(gameobject.stack.objects, seed)
+		updateStackTexture(gameobject)
+	}
+
+	if (playAnimation) {
+		const animation = Animation.create()
+		let sign = 1
+		for (const textureData of gameobject.sprite.textures) {
+			animation.transform(textureData.transform, "angle", [0, 0], [300, Math.PI * sign], [350, Math.PI * sign], [650, 0])
+			sign *= -1
+		}
+		animation
+			.callback(doShuffle, [325])
+			.play()
+	} else {
+		doShuffle()
+	}
+
 }
 
 /** @param {import("./typedefs").GameObject} gameobject */
-function flip(gameobject) {
+function flip(gameobject, playAnimation=true) {
 	assertComponent(gameobject, "stack", "flip")
 
-	for (const object of gameobject.stack.objects)
-		if (object.flip)
-			Flippable.flip(object)
-	gameobject.stack.objects = gameobject.stack.objects.reverse()
-	updateStackTexture(gameobject)
+	function doAFlip() {
+		for (const object of gameobject.stack.objects)
+			if (object.flip)
+				Flippable.flip(object, false)
+		gameobject.stack.objects = gameobject.stack.objects.reverse()
+		updateStackTexture(gameobject)
+	}
+
+	if (playAnimation) {
+		Animation.create()
+			.transform(gameobject.sprite.transform, "scaleX", [0, 1], [60, 0], [120, 1])
+			.callback(doAFlip, [60])
+			.play()
+	} else {
+		doAFlip()
+	}
 }
 
 function stackable(gameobject, kind) {

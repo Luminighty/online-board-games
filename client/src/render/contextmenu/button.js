@@ -47,12 +47,12 @@ MenuRenderer[MENU_TYPE.Button] = (item, render) => {
 
 	render.context.fillStyle = "white"
 	render.context.font = BASE_FONT
-	render.context.fillText(item.label, render.x + render.padding.x, render.y + render.padding.y)
+	render.context.fillText(item.label, render.x + render.padding.l, render.y + render.padding.y)
 
 	if (item.hotkey) {
 		render.context.textAlign = "right"
 		render.context.font = LABEL_FONT
-		render.context.fillText(item.hotkey, render.x + render.width - render.padding.x, render.y + render.padding.y)
+		render.context.fillText(item.hotkey, render.x + render.width - render.padding.l, render.y + render.padding.y)
 		render.context.textAlign = "left"
 	}
 

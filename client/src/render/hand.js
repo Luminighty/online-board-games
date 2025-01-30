@@ -1,22 +1,41 @@
+import { Camera } from "../camera"
+import { Matrix } from "../utils/matrix"
 import { Transform } from "../utils/transform"
+import { Animation } from "./animator"
 import { getContext } from "./canvas"
 import { sprites, applySpriteTransform, applySpriteInverseTransform } from "./sprite"
 
 const Hand = {
-	worldTransform: Transform.new({
-		x: -200, y: 800
-	}),
-	screenTransform: Transform.new({
-		x: 0, y: window.innerHeight - 200
-	}),
+	worldTransform: Transform.new({ x: -200, y: 300, angle: Math.PI / 3 }),
+	screenTransform: Transform.new({ scaleX: 0.5, scaleY: 0.5 }),
 	width: 500,
 	height: 200,
 	/** @type {import("./sprite").Sprite[]} */
 	sprites: [],
 }
 
+window.addEventListener("keypress", (e) => {
+	if (e.key == "r")
+		Animation.create()
+			.transform(Hand.worldTransform, "angle", [0, 0], [1000, Math.PI * 2])
+			.play()
+})
+
+export function isInHand() {
+	const worldhand = Matrix.applyVec(Hand.worldTransform.inverse, Camera.world.x, Camera.world.y)
+	return worldhand.x >= 0 && worldhand.x <= Hand.width && 
+		worldhand.y >= 0 && worldhand.y <= Hand.height
+}
+
 export function addToHand(gameobject) {
+	gameobject.meta.isInHand = true
 	Hand.sprites.push(gameobject.sprite)
+}
+
+export function removeFromHand(gameobject) {
+	gameobject.meta.isInHand = false
+	const id = Hand.sprites.findIndex((sprite) => sprite.id === gameobject.sprite.id)
+	Hand.sprites.splice(id, 1)
 }
 
 export function renderHandArea() {
@@ -29,11 +48,15 @@ export function renderHandArea() {
 }
 
 export function renderHandContents() {
-	
 	const context = getContext()
+
 	context.save()
-	applySpriteInverseTransform(context, Hand.worldTransform)
 	applySpriteTransform(context, Hand.screenTransform)
+
+	context.fillStyle = "#00000055"
+	context.fillRect(0, 0, Hand.width, Hand.height)
+
+	applySpriteInverseTransform(context, Hand.worldTransform)
 	for (const sprite of Hand.sprites) {
 		if (!sprite.visible)
 			continue
@@ -64,9 +87,15 @@ export function renderHandContents() {
 }
 
 function onResize(e) {
-	Hand.width = window.innerWidth
-	Hand.screenTransform.y = window.innerHeight - 200
+	Hand.width = Math.min(window.innerWidth, 800)
+	Hand.worldTransform.pivot.x = Hand.width / 2
+	Hand.worldTransform.pivot.y = Hand.height / 2
+	Hand.screenTransform.pivot.x = Hand.width / 2
+	Hand.screenTransform.pivot.y = Hand.height
+	Hand.screenTransform.x = window.innerWidth / 2
+	Hand.screenTransform.y = window.innerHeight
 	Transform.updateTransform(Hand.screenTransform)
+	Transform.updateTransform(Hand.worldTransform)
 }
 
 export function setupHand() {

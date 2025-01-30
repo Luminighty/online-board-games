@@ -6,6 +6,7 @@ import { Matrix } from "./matrix"
  * @prop {number} y
  * @prop {number} scaleX
  * @prop {number} scaleY
+ * @prop {{x: number, y: number}} pivot
  * @prop {number} angle
  * @prop {TransformT} parent
  * @prop {import("./matrix").CanvasMatrix} transform
