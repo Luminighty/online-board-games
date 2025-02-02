@@ -1,7 +1,8 @@
 import { GameObject } from "./components/gameobject"
 import { GameSprite } from "./components/sprite"
+import { Stack } from "./components/stack"
 import { loadTexture } from "./render/texture"
-import { StaticPiece } from "./templates/common"
+import { Card, StaticPiece } from "./templates/common"
 
 const WIDTH = 250
 const HEIGHT = 289
@@ -28,14 +29,20 @@ function piece(kind, color, x, y) {
 	GameSprite.create(object, texture, {
 		width, height,
 	})
+	Stack.stackable(object, `piece_${kind}`)
+	return object
 }
 
 function playerkit(color, x, y) {
+	const roads = []
 	for (let offset = 0; offset < 15; offset++)
-		piece("road", color, x + offset * 10, y)
+		roads.push(piece("road", color, x + offset * 10, y))
+	const settls = []
 	for (let offset = 0; offset < 5; offset++)
-		piece("settl", color, x + offset * 10, y + 100)
+		settls.push(piece("settl", color, x + offset * 10, y + 100))
 	piece("costs", color, x, y + 300)
+	Stack.fromGameObjects(...roads)
+	Stack.fromGameObjects(...settls)
 }
 
 function num_tile(value, _x, _y) {
@@ -69,6 +76,18 @@ function pick(tiles) {
 	return tiles.splice(Math.floor(Math.random() * tiles.length), 1)[0]
 }
 
+function resource(type, amount, x, y) {
+	const cards = Array(amount).fill(true).map(() => Card({ 
+		front: `assets/settlers/cards/${type}.png`,
+		back: "assets/settlers/cards/back.png",
+		x: 0, y: 0,
+		width: 500 / 4,
+		height: 726 / 4,
+	}))
+	const deck = GameObject.create({ x, y, })  
+	Stack.create(deck, { objects: cards })
+}
+
 function load() {
 	tile("desert", 0, 0)
 
@@ -79,7 +98,7 @@ function load() {
 		...Array(4).fill("lumber"),
 		...Array(4).fill("grain"),
 	]
-	
+
 	const num_tiles = [
 		2, 3, 3, 4, 4, 5, 5, 6, 6,
 		8, 8, 9, 9, 10, 10, 11, 11, 12
@@ -102,6 +121,13 @@ function load() {
 	sea(462, -410, 4)
 	sea(585, 197, 5)
 	playerkit("red", 0, 700)
+
+	resource("ore",   19, 0, 500)
+	resource("brick", 19, 50, 500)
+	resource("wool",  19, 100, 500)
+	resource("wood",  19, 150, 500)
+	resource("grain", 19, 200, 500)
+	
 }
 
 export const Catan = { load }

@@ -21,4 +21,5 @@ export function FrenchCardDeck(x, y) {
 	}
 	const deck = GameObject.create({ x, y, })  
 	Stack.create(deck, { objects: cards })
+	Stack.shuffle(deck, false)
 }

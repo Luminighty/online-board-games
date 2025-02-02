@@ -3,23 +3,18 @@ import { Matrix } from "../utils/matrix"
 import { Transform } from "../utils/transform"
 import { Animation } from "./animator"
 import { getContext } from "./canvas"
-import { sprites, applySpriteTransform, applySpriteInverseTransform } from "./sprite"
+import { sprites, applySpriteTransform, applySpriteInverseTransform, applyMatrixToContext, hitcheckSprites } from "./sprite"
+import { mainViewport } from "./viewport"
 
-const Hand = {
-	worldTransform: Transform.new({ x: -200, y: 300, angle: Math.PI / 3 }),
-	screenTransform: Transform.new({ scaleX: 0.5, scaleY: 0.5 }),
+export const Hand = {
+	worldTransform: Transform.new({ x: -900, y: 0, angle: Math.PI / 2 }),
+	screenTransform: Transform.new({ scaleX: 0.75, scaleY: 0.75 }),
+	handToWorld: Transform.new(),
 	width: 500,
 	height: 200,
 	/** @type {import("./sprite").Sprite[]} */
 	sprites: [],
 }
-
-window.addEventListener("keypress", (e) => {
-	if (e.key == "r")
-		Animation.create()
-			.transform(Hand.worldTransform, "angle", [0, 0], [1000, Math.PI * 2])
-			.play()
-})
 
 export function isInHand() {
 	const worldhand = Matrix.applyVec(Hand.worldTransform.inverse, Camera.world.x, Camera.world.y)
@@ -27,14 +22,24 @@ export function isInHand() {
 		worldhand.y >= 0 && worldhand.y <= Hand.height
 }
 
+export function isInScreenHand() {
+	const screenHand = Matrix.applyVec(Hand.screenTransform.inverse, Camera.screen.x, Camera.screen.y)
+	return screenHand.x >= 0 && screenHand.x <= Hand.width && 
+		screenHand.y >= 0 && screenHand.y <= Hand.height
+}
+
+/** @param {import("../components/typedefs").GameObject} gameobject  */
 export function addToHand(gameobject) {
 	gameobject.meta.isInHand = true
 	Hand.sprites.push(gameobject.sprite)
 }
 
+/** @param {import("../components/typedefs").GameObject} gameobject  */
 export function removeFromHand(gameobject) {
 	gameobject.meta.isInHand = false
 	const id = Hand.sprites.findIndex((sprite) => sprite.id === gameobject.sprite.id)
+	if (id == -1)
+		return
 	Hand.sprites.splice(id, 1)
 }
 
@@ -62,24 +67,21 @@ export function renderHandContents() {
 			continue
 		context.save()
 		applySpriteTransform(context, sprite.transform)
-		// NOTE(Lumi): When we have a specific texture to render in hand,
-		//             we choose that over the default
-		if (sprite.meta.handTexture && sprite.meta.handTexture.loaded) {
+		for (let i = 0; i < sprite.textures.length; i++) {
+			const textureData = sprite.textures[i]
+			// NOTE(Lumi): When we have a specific texture to render in hand,
+			//             we choose that over the default
+			const texture = sprite.meta.handTextures?.[i] ?? textureData.texture
+			if (!texture.loaded)
+				continue
+			context.save()
+			applyMatrixToContext(context, textureData.transform.transform)
 			context.drawImage(
-				sprite.meta.handTexture.image, 
-				0, 0,
-				sprite.textures[0].width, sprite.textures[0].height
+				texture.image, 
+				0, 0, 
+				textureData.width, textureData.height
 			)
-		} else {
-			for (let i = 0; i < sprite.textures.length; i++) {
-				const textureData = sprite.textures[i]
-				if (textureData.texture.loaded)
-					context.drawImage(
-						textureData.texture.image, 
-						textureData.x, textureData.y, 
-						textureData.width, textureData.height
-					)
-			}
+			context.restore()
 		}
 		context.restore()
 	}
@@ -90,13 +92,35 @@ function onResize(e) {
 	Hand.width = Math.min(window.innerWidth, 800)
 	Hand.worldTransform.pivot.x = Hand.width / 2
 	Hand.worldTransform.pivot.y = Hand.height / 2
+
 	Hand.screenTransform.pivot.x = Hand.width / 2
 	Hand.screenTransform.pivot.y = Hand.height
 	Hand.screenTransform.x = window.innerWidth / 2
 	Hand.screenTransform.y = window.innerHeight
+
 	Transform.updateTransform(Hand.screenTransform)
 	Transform.updateTransform(Hand.worldTransform)
+	Hand.handToWorld = Matrix.apply(Hand.worldTransform.transform, Hand.screenTransform.inverse)
 }
+
+window.addEventListener("keypress", (e) => {
+	let res = Matrix.applyVec(Hand.screenTransform.inverse, Camera.screen.x, Camera.screen.y)
+	res = Matrix.applyVec(Hand.worldTransform.transform, res.x, res.y)
+	//const hitResult = hitcheckSprites(res.x, res.y)
+	console.log(res);
+})
+
+export function handHitCheck() {
+	if (!isInScreenHand())
+		return null
+	const worldPos = Matrix.applyVec(Hand.handToWorld, Camera.screen.x, Camera.screen.y)
+	
+	const result = hitcheckSprites(worldPos.x, worldPos.y)
+	if (!result)
+		return null
+	return result
+}
+
 
 export function setupHand() {
 	window.addEventListener("resize", onResize)

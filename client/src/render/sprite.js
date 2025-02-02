@@ -4,6 +4,7 @@ import { Matrix } from "../utils/matrix"
 import { mainViewport } from "./viewport"
 import { textureHitCheck } from "./texture"
 import { Transform } from "../utils/transform"
+import { Hand } from "./hand"
 
 /**
  * @typedef {Object} Sprite
@@ -92,6 +93,7 @@ export function destroySprite(sprite) {
 export function renderSprites() {
 	if (zIndexDirty) {
 		sprites.sort((l, r) => l.zIndex - r.zIndex)
+		Hand.sprites.sort((l, r) => l.zIndex - r.zIndex)
 		zIndexDirty = false
 	}
 	const context = getContext()
@@ -101,16 +103,16 @@ export function renderSprites() {
 		context.save()
 		applySpriteTransform(context, sprite.transform)
 		for (let i = 0; i < sprite.textures.length; i++) {
-			context.save()
 			const textureData = sprite.textures[i]
+			if (!textureData.texture.loaded)
+				continue
+			context.save()
 			applyMatrixToContext(context, textureData.transform.transform)
-			if (textureData.texture.loaded) {
-				context.drawImage(
-					textureData.texture.image, 
-					0, 0, 
-					textureData.width, textureData.height
-				)
-			}
+			context.drawImage(
+				textureData.texture.image, 
+				0, 0, 
+				textureData.width, textureData.height
+			)
 			context.restore()
 		}
 		context.restore()
@@ -156,8 +158,9 @@ function getSpriteHitData(worldX, worldY, sprite) {
 		return null
 	
 	const globalTransform = Transform.globalInverse(sprite.transform)
+	const world = Matrix.applyVec(globalTransform, worldX, worldY)
 	for (let j = 0; j < sprite.textures.length; j++) {
-		const local = Matrix.applyVec(Matrix.apply(globalTransform, sprite.textures[j].transform.inverse), worldX, worldY)
+		const local = Matrix.applyVec(sprite.textures[j].transform.inverse, world.x, world.y)
 
 		const offsetX = local.x
 		const offsetY = local.y

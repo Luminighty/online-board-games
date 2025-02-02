@@ -17,14 +17,20 @@ Need:
 	 - [X] Shuffle
  - [X] Rollable
    - [X] List textures
- - [ ] Hand
-   - [ ] Draw to hand
-	 - [ ] Hitcheck hand
-	 - [ ] Remove from hand from Global zone
-	 - [ ] Remove from hand from Local zone
+ - [X] Hand
+   - [X] Draw to hand
+	 - [X] Hitcheck hand
+	 - [X] Remove from hand from Global zone
+	 - [X] Remove from hand from Local zone
 	 - [X] Hand Local Zone Rendering
 	 - [X] Hand Global Zone
 	 - [X] Show backsides
+   - [ ] HandStorable
+	 - [ ] Hand Settings
+	   - [ ] Width/Height
+		 - [ ] Position
+		 - [ ] Angle
+		 - [ ] Auto Orient cards
  - [ ] Networking
    - [ ] Server hosted game
 	 - [ ] Allow single player (WITHOUT SERVER)
@@ -42,6 +48,7 @@ Good to have
  - [ ] ContextMenu
    - [ ] Rotate
 	 - [ ] Global Rotate Amount
+ - [ ] Rotate Items towards Camera when grabbed
  - [ ] Animations
    - [ ] Move interpolation
 	 - [ ] Rotate interpolation
@@ -49,4 +56,16 @@ Good to have
 	 - [X] Shuffle
 	 - [X] Grab
 	 - [X] Context Open/Close
-	 - [ ] Dice (3d?)
+ - [ ] Dice (3d?)
+	 - [O] 3D Math
+   - [X] 3D cube texture rendering
+	 - [X] Set sides
+	 - [ ] Make it a sprite
+	 - [ ] Make it an object
+	 - [ ] Allow unique textures
+	 - [ ] Allow DX (hardcoded maybe) (D4, D6, D8, D12, D20)
+
+Bugs
+ - [X] Stacking in a hand does not work
+ - [ ] Rotated Stack hitcheck subtextures
+ - [ ] ZIndexing in Stacks does not update

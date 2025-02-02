@@ -1,4 +1,4 @@
-const BASE = 1000
+const BASE = 2000
 
 export const worldBounds = {
 	minX: -BASE,

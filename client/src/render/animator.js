@@ -77,7 +77,7 @@ function update(dt) {
 			finished.push(i)
 	}
 	for (let i = finished.length - 1; i >= 0; i--)
-		animations.splice(i, 1)
+		animations.splice(finished[i], 1)
 }
 
 const TIMELINE_TYPE = {

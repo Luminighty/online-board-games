@@ -4,6 +4,7 @@
  */
 
 import { Animation } from "../render/animator"
+import { addToHand, Hand, isInHand, isInScreenHand, removeFromHand } from "../render/hand"
 import { bringToFront, setZIndexDirty } from "../render/sprite"
 import { Matrix } from "../utils/matrix"
 import { createShuffleSeed, shuffleApply } from "../utils/random"
@@ -13,7 +14,7 @@ import { GameObject } from "./gameobject"
 import { GameSprite } from "./sprite"
 import { assertComponent } from "./utils"
 
-const STACK_OFFSET = 10
+const STACK_OFFSET = 20
 const VISIBLE_ELEMENTS = 3
 let GRAB_TIMEOUT = 300
 
@@ -29,8 +30,10 @@ function create(gameobject, options = {}) {
 	const objects = gameobject.stack.objects
 	for (const object of objects)
 		object.sprite.visible = false
-	
 	GameSprite.createMulti(gameobject, {}, objects[0].sprite.textures[0])
+	gameobject.sprite.meta.handTextures = []
+	for (let i = 0; i < VISIBLE_ELEMENTS; i++)
+		gameobject.sprite.meta.handTextures[i] = {}
 	updateStackTexture(gameobject)
 	return gameobject
 }
@@ -51,6 +54,7 @@ function fromGameObjects(target, ...rest) {
 	}
 
 	Stack.create(stack, { objects })
+	return stack
 }
 
 /** @param {import("./typedefs").GameObject} gameobject */
@@ -62,22 +66,40 @@ function updateStackTexture(gameobject) {
 	const length = Math.min(objects.length, VISIBLE_ELEMENTS)
 	gameobject.sprite.textures.length = length
 	for (let i = 0; i < length; i++) {
+		if (!gameobject.sprite.textures[i]) {
+			gameobject.sprite.textures[i] = { transform: Transform.new() }
+			console.log("Setting ", i);
+		}
+	}
+
+	for (let i = 0; i < length; i++) {
 		const obj = objects[objects.length - i - 1]
 		const textureData = obj.sprite.textures[0]
-		if (!gameobject.sprite.textures[length - i - 1])
-			gameobject.sprite.textures[length - i - 1] = { transform: Transform.new() }
+		
 
-		const stackTexture = gameobject.sprite.textures[length - i - 1]
-
+		{
+			const backObject = objects[i]
+			if (backObject.flip) {
+				gameobject.sprite.meta.handTextures[length - i - 1] = backObject.flip.flipped ? backObject.flip.front : backObject.flip.back
+			} else {
+				gameobject.sprite.meta.handTextures[length - i - 1] = backObject.sprite.textures[0].texture
+			}
+		}
+		{
+			const stackTextureData = gameobject.sprite.textures[length - i - 1]
+			
+			stackTextureData.texture = textureData.texture
+			stackTextureData.height = textureData.height
+			stackTextureData.width = textureData.width
+			stackTextureData.transform.y = obj.sprite.textures[0].height / 2 + i * STACK_OFFSET
+			stackTextureData.transform.x = obj.sprite.textures[0].width / 2
+			stackTextureData.transform.pivot.x = obj.sprite.textures[0].width / 2
+			stackTextureData.transform.pivot.y = obj.sprite.textures[0].height / 2
+			console.log(stackTextureData.transform.y);
+			Transform.updateTransform(stackTextureData.transform)
+			console.log(stackTextureData.transform.transform);
+		}
 		// We need to ensure that the texture transform stays the same for animations to work properly
-		stackTexture.texture = textureData.texture
-		stackTexture.height = textureData.height
-		stackTexture.width = textureData.width
-		stackTexture.transform.y = obj.sprite.textures[0].height / 2 + i * STACK_OFFSET
-		stackTexture.transform.x = obj.sprite.textures[0].width / 2
-		stackTexture.transform.pivot.x = obj.sprite.textures[0].width / 2
-		stackTexture.transform.pivot.y = obj.sprite.textures[0].height / 2
-		Transform.updateTransform(stackTexture.transform)
 	}
 }
 
@@ -86,7 +108,8 @@ function pop(gameobject) {
 	assertComponent(gameobject, "stack", "pop")
 
 	const objects = gameobject.stack.objects
-	const popped = objects.pop(objects)
+	const inAnyHand = isInScreenHand() || isInHand()
+	const popped = inAnyHand ? objects.shift(objects) : objects.pop(objects)
 	popped.transform.x = gameobject.transform.x
 	popped.transform.y = gameobject.transform.y
 	popped.transform.angle = gameobject.transform.angle
@@ -96,15 +119,15 @@ function pop(gameobject) {
 	}
 
 	if (objects.length == 1) {
-		const popped = objects.pop(objects)
+		const last = objects.pop(objects)
 		const newPosition = Matrix.applyVec(gameobject.transform.transform, 0, STACK_OFFSET)
-		popped.transform.x = newPosition.x
-		popped.transform.y = newPosition.y
-		popped.transform.angle = gameobject.transform.angle
-		if (popped.sprite)
-			popped.sprite.visible = true
-
-		Transform.updateTransform(popped.transform)
+		last.transform.x = newPosition.x
+		last.transform.y = newPosition.y
+		last.transform.angle = gameobject.transform.angle
+		inAnyHand ? addToHand(last) : removeFromHand(last)
+		if (last.sprite)
+			last.sprite.visible = true
+		Transform.updateTransform(last.transform)
 
 		GameObject.destroy(gameobject)
 	} else {
@@ -112,7 +135,6 @@ function pop(gameobject) {
 	}
 	return popped
 }
-
 function mergeStacks(gameobject, other) {
 	const objects = gameobject.stack.objects
 	objects.push(...other.stack.objects)
@@ -127,8 +149,13 @@ function mergeStacks(gameobject, other) {
 function push(gameobject, other) {
 	assertComponent(gameobject, "stack", "push")
 
+	const inHand = isInScreenHand()
 	if (other.stack) {
-		mergeStacks(gameobject, other)
+		if (inHand) {
+			mergeStacks(other, gameobject)
+		} else {
+			mergeStacks(gameobject, other)
+		}
 		return
 	}
 	
@@ -136,10 +163,15 @@ function push(gameobject, other) {
 		other.sprite.visible = false
 
 	const objects = gameobject.stack.objects
-	objects.push(other)
+	if (inHand) {
+		objects.unshift(other)
+	} else {
+		objects.push(other)
+	}
 
 	updateStackTexture(gameobject)
 }
+
 
 /** @param {import("./typedefs").GameObject} gameobject */
 function shuffle(gameobject, playAnimation=true) {
@@ -175,7 +207,7 @@ function flip(gameobject, playAnimation=true) {
 		for (const object of gameobject.stack.objects)
 			if (object.flip)
 				Flippable.flip(object, false)
-		gameobject.stack.objects = gameobject.stack.objects.reverse()
+		gameobject.stack.objects.reverse()
 		updateStackTexture(gameobject)
 	}
 
@@ -195,6 +227,6 @@ function stackable(gameobject, kind) {
 
 
 export const Stack = {
-	create, pop, push, shuffle, 
+	create, pop, push, shuffle,
 	GRAB_TIMEOUT, flip, stackable, fromGameObjects
 }

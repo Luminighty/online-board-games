@@ -5,8 +5,8 @@ import { assertComponent } from "./utils"
 /**
  * @typedef {Object} Flippable
  * @property {boolean} flipped
- * @property {string} back
- * @property {string} front
+ * @property {import("../render/texture").Texture} back
+ * @property {import("../render/texture").Texture} front
  */
 
 
@@ -21,7 +21,7 @@ function create(gameobject, options = {}) {
 		front: options.front,
 	}
 	if (gameobject.sprite)
-		gameobject.sprite.meta.handTexture = gameobject.flip.flipped ? gameobject.flip.front : gameobject.flip.back
+		gameobject.sprite.meta.handTextures = gameobject.flip.flipped ? [gameobject.flip.front] : [gameobject.flip.back]
 	return gameobject
 }
 
@@ -33,7 +33,7 @@ function flip(object, playAnimation=true) {
 		object.flip.flipped = !object.flip.flipped
 		if (object.sprite) {
 			object.sprite.textures[0].texture = object.flip.flipped ? object.flip.back : object.flip.front
-			object.sprite.meta.handTexture = object.flip.flipped ? object.flip.front : object.flip.back
+			object.sprite.meta.handTextures[0] = object.flip.flipped ? object.flip.front : object.flip.back
 		}
 	}
 

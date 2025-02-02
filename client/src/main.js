@@ -14,6 +14,7 @@ import { GameSprite } from "./components/sprite"
 import { renderHandArea, renderHandContents, setupHand } from "./render/hand"
 import { Animation } from "./render/animator"
 import { renderDebug } from "./render/debug"
+import { renderCube } from "./render/3d"
 
 setupCanvas("#app")
 const context = getContext()
@@ -54,6 +55,7 @@ function render(ts) {
   const dt = ts - lastTs
   lastTs = ts
   Animation.update(dt)
+  context.reset()
 
   context.fillStyle = "black"
   context.fillRect(0, 0, window.innerWidth, window.innerHeight)
@@ -67,6 +69,7 @@ function render(ts) {
     worldBounds.maxX - worldBounds.minX, worldBounds.maxY - worldBounds.minY
   )
   renderSprites()
+  renderCube(dt)
   renderHandArea()
 
   context.resetTransform()

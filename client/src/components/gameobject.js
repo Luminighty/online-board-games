@@ -1,3 +1,4 @@
+import { removeFromHand } from "../render/hand"
 import { destroySprite } from "../render/sprite"
 import { Matrix } from "../utils/matrix"
 import { Transform } from "../utils/transform"
@@ -27,6 +28,8 @@ function destroy(gameobject) {
 		gameObjects.splice(index, 1)
 	if (gameobject.sprite)
 		destroySprite(gameobject.sprite)
+	removeFromHand(gameobject)
+	gameobject.destroyed = true
 }
 
 export const GameObject = {

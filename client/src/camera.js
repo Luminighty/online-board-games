@@ -4,7 +4,7 @@ import { Roll } from "./components/roll"
 import { Stack } from "./components/stack"
 import { ContextMenu, isContextMenuHovering } from "./render/contextmenu"
 import { SpriteEffect } from "./render/effects"
-import { addToHand, isInHand, removeFromHand } from "./render/hand"
+import { addToHand, Hand, handHitCheck, isInHand, isInScreenHand, removeFromHand } from "./render/hand"
 import { bringToFront, hitcheckSprites, hitcheckSpritesAll } from "./render/sprite"
 import { mainViewport } from "./render/viewport"
 import { Matrix } from "./utils/matrix"
@@ -41,8 +41,7 @@ export function onWheel(e) {
 	let hitResult = Camera.drag?.gameobject ?? Camera.wheelTarget.target
 	let locked = hitResult?.locked ?? false
 	if (!hitResult) {
-		const worldPoint = mainViewport.screenToWorld(e.x, e.y)
-		hitResult = hitcheckSprites(worldPoint.x, worldPoint.y)
+		hitResult = hitcheckSprites(Camera.world.x, Camera.world.y)
 		locked = hitResult?.sprite.meta.gameobject?.locked ?? false
 		Camera.wheelTarget.target = hitResult?.sprite?.meta?.gameobject
 		Camera.wheelTarget.x = e.x
@@ -74,8 +73,7 @@ export function onPointerDown(e) {
 	Camera.movedForDrag = false
 
 	// Grab object
-	const worldPoint = mainViewport.screenToWorld(e.x, e.y)
-	const hitResult = hitcheckSprites(worldPoint.x, worldPoint.y)
+	const hitResult = handHitCheck() ?? hitcheckSprites(Camera.world.x, Camera.world.y)
 	/** @type {GameObject} */
 	const hitResultObject = hitResult?.sprite?.meta?.gameobject
 	if (e.button === 0 && hitResult && !hitResultObject.locked) {
@@ -85,8 +83,8 @@ export function onPointerDown(e) {
 		const transform = hitResultObject.transform
 		Camera.drag = {
 			gameobject: hitResultObject,
-			offsetX: transform.x - worldPoint.x,
-			offsetY: transform.y - worldPoint.y,
+			offsetX: transform.x - Camera.world.x,
+			offsetY: transform.y - Camera.world.y,
 			mode: e.button
 		}
 
@@ -119,7 +117,11 @@ export function onPointerDown(e) {
 export function onPointerMove(e) {
 	Camera.screen.x = e.x
 	Camera.screen.y = e.y
-	Camera.world = mainViewport.screenToWorld(e.x, e.y)
+	if (isInScreenHand()) {
+		Camera.world = Matrix.applyVec(Hand.handToWorld, e.x, e.y)
+	} else {
+		Camera.world = mainViewport.screenToWorld(e.x, e.y)
+	}
 
 	if (Camera.wheelTarget.target && Math.abs(Camera.wheelTarget.x - e.x) + Math.abs(Camera.wheelTarget.y - e.y) > 10)
 		Camera.wheelTarget.target = null
@@ -144,7 +146,7 @@ export function onPointerMove(e) {
 			clearTimeout(Camera.stack.timeout)
 		}
 
-		const inHand = isInHand()
+		const inHand = isInHand() || isInScreenHand()
 		if (inHand != Camera.drag.gameobject.meta.isInHand) {
 			inHand ? addToHand(Camera.drag.gameobject) : removeFromHand(Camera.drag.gameobject)
 		}
@@ -189,6 +191,8 @@ function onDropObject(gameobject) {
 		if (!hoverObject)
 			continue
 
+		// NOTE(Lumi): This is a pretty ugly way of handling the stacks based on whenever we're doing it in our hand or not
+		// Maybe clean it up at some point
 		if (hoverObject.stack) {
 			Stack.push(hoverObject, gameobject)
 			bringToFront(hoverObject.sprite)
@@ -196,8 +200,12 @@ function onDropObject(gameobject) {
 		}
 
 		if (hoverObject.stackable && hoverObject.stackable === gameobject.stackable) {
-			Stack.fromGameObjects(hoverObject, gameobject)
-			bringToFront(hoverObject.sprite)
+			const newObject = isInScreenHand() ? 
+					Stack.fromGameObjects(gameobject, hoverObject) :
+					Stack.fromGameObjects(hoverObject, gameobject)
+			if (hoverObject.meta.isInHand)
+				addToHand(newObject)
+				bringToFront(hoverObject.sprite)
 			return
 		}
 	}
@@ -253,7 +261,7 @@ function showGameObjectContextMenu(gameobject) {
 	ContextMenu
 		.new()
 		.button(gameobject.locked ? "Unlock" : "Lock", () => gameobject.locked = !gameobject.locked)
-		.button("To hand", () => addToHand(gameobject))
+		.button("Debug", () => console.log(gameobject))
 	
 	if (gameobject.flip)
 		ContextMenu
@@ -264,6 +272,7 @@ function showGameObjectContextMenu(gameobject) {
 			.button("Draw", () => Stack.pop(gameobject))
 			.button("Flip", () => Stack.flip(gameobject)).hotkey("F")
 			.button("Shuffle", () => Stack.shuffle(gameobject)).hotkey("S")
+			.label(`Count: ${gameobject.stack.objects.length}`)
 
 	if (gameobject.roll)
 		ContextMenu
@@ -279,7 +288,6 @@ export function onKeyPress(e) {
 	if (!hit?.sprite?.meta?.gameobject)
 		return
 	const gameobject = hit.sprite.meta.gameobject
-	console.log(e.key);
 	
 
 	if (gameobject.flip)
